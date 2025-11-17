@@ -14,6 +14,7 @@ const storeRouter = require("./Store.route");
 const loginHistory = require("./LoginHistory.route");
 const purchaseOrderRouter = require("./PurchaseOrder.route");
 const saleInvoiceRouter = require("./SaleInvoice.route");
+const SupplierRouter = require("./Supplier.route");
 
 function router(app) {
   app.use("/auth", authRouter);
@@ -32,6 +33,7 @@ function router(app) {
   app.use("/store", storeRouter);
   app.use("/purchase_order", purchaseOrderRouter);
   app.use("/sale_invoice", saleInvoiceRouter);
+  app.use("/supplier", SupplierRouter);
   app.get("/", (req, res) => {
     res.send("Hello WTM Sport Ecommerce Service");
   });
