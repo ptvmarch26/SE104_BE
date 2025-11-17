@@ -2,20 +2,18 @@ const saleInvoiceService = require("../services/SaleInvoice.service");
 
 const createSaleInvoice = async (req, res) => {
   try {
-    const saleInvoiceData = { ...req.body };    
+    const saleInvoiceData = { ...req.body };
     const result = await saleInvoiceService.createSaleInvoice(saleInvoiceData);
     result.EC === 0
       ? res.success(result.data, result.EM)
       : res.error(result.EC, result.EM);
-  }
-    catch (error) {
+  } catch (error) {
     console.error("Error in createSaleInvoice:", error);
     return res.InternalError();
-  } 
+  }
 };
 
-const getSaleInvoices = async (req, res) => 
-{
+const getSaleInvoices = async (req, res) => {
   try {
     const saleInvoiceId = req.params.id;
     const result = await saleInvoiceService.getSaleInvoices(saleInvoiceId);
@@ -30,5 +28,5 @@ const getSaleInvoices = async (req, res) =>
 
 module.exports = {
   createSaleInvoice,
-  getSaleInvoices
+  getSaleInvoices,
 };

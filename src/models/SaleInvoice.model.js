@@ -1,34 +1,46 @@
 const mongoose = require("mongoose");
 
-const SaleInvoiceSchema = new mongoose.Schema({
-  invoiceNumber: String,
-  createdAt: { type: Date, default: Date.now },
+const saleItemSchema = new mongoose.Schema({
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
 
-  customerName: String,
-  customerPhone: String,
+  color_name: { type: String, required: true },
+  variant_size: { type: String, required: true },
 
-  items: [
-    {
-      product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-      color_name: String,
-      variant_size: String,
-      quantity: Number,
-      importPrice: Number,   
-      salePrice: Number,     
-      total: Number          
-    }
-  ],
+  quantity: { type: Number, required: true, min: 1 },
 
-  totalAmount: Number,
-  customerPaid: Number,
-  remaining: Number
+  sale_price: { type: Number, required: true },
+  total: { type: Number, required: true },
+});
 
-  
-},
+const SaleInvoiceSchema = new mongoose.Schema(
+  {
+    invoice_number: { type: String, unique: true },
+    customer_name: String,
+    customer_phone: String,
 
-{
+    items: [saleItemSchema],
+
+    total_amount: Number,
+    customer_paid: Number,
+    remaining: Number,
+  },
+
+  {
     timestamps: true,
     collection: "SaleInvoice",
-  })
+  }
+);
+
+SaleInvoiceSchema.pre("save", async function (next) {
+  if (!this.invoice_number) {
+    const count = await mongoose.model("SaleInvoice").countDocuments();
+    this.invoice_number = "HD" + String(count + 1).padStart(6, "0");
+  }
+  next();
+});
 
 module.exports = mongoose.model("SaleInvoice", SaleInvoiceSchema);
