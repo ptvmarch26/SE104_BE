@@ -5,22 +5,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const ChatbotController = {
-  async chatWithBot(req, res) {
-    const { message, history } = req.body;
-    try {
-      const result = await ChatbotService.chatWithBotService(
-        message,
-        req.user,
-        history
-      );
-      result.EC === 0
-        ? res.success(result.data, result.EM)
-        : res.error(result.EC, result.EM);
-    } catch (error) {
-      return res.InternalError();
-    }
-  },
-
   async SearchProduct(req, res) {
     const { message } = req.query;
     try {
@@ -44,6 +28,7 @@ const ChatbotController = {
         ? res.success(result.data, result.EM)
         : res.error(result.EC, result.EM);
     } catch (error) {
+      console.log("err", error)
       return res.InternalError();
     }
   },
