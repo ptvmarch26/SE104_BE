@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 5000;
 // Gọi hàm setWebhook khi server khởi chạy
 
 // Middleware
-app.use(morgan("combined")); // HTTP Logger (console các thông tin request)
+// app.use(morgan("combined")); // HTTP Logger (console các thông tin request)
 app.use(express.static(path.join(__dirname, "public"))); // Static files
 app.use(express.urlencoded({ extended: true })); // Xử lý form
 app.use(express.json()); // Xử lý dữ liệu JSON trong request body.
