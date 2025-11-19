@@ -280,7 +280,6 @@ const getAllProduct = async (filters) => {
   };
 };
 
-
 const MIN_STOCK = 20;
 
 const getInventoryReport = async (month, categoryId) => {
@@ -376,7 +375,7 @@ const getInventoryReport = async (month, categoryId) => {
 
           const opening = snapshotMap.get(key) ?? variant.variant_countInStock;
           const imported = importMap.get(key)?.imported || 0;
-          const unit = importMap.get(key)?.unit || "not specified";
+          const unit = importMap.get(key)?.unit || "Không có";
           const sold = saleMap.get(key) || 0;
           const ending = opening + imported - sold;
 

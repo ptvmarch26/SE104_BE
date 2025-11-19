@@ -158,8 +158,9 @@ const getInventoryReport = async (req, res) => {
 
     const result = await productService.getInventoryReport(month, categoryId);
 
-    return res.status(200).json(result);
-
+    result.EC === 0
+      ? res.success(result.data, result.EM)
+      : res.error(result.EC, result.EM);
   } catch (error) {
     return res.InternalError();
   }
@@ -171,6 +172,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getDetailsProduct,
-  getAllProduct,  
+  getAllProduct,
   getInventoryReport,
 };

@@ -8,22 +8,22 @@ const warrantyTicketSchema = new mongoose.Schema(
     ticket_type: {
       type: String,
       enum: ["Bảo hành", "Đổi trả"],
-      required: true
+      required: true,
     },
 
     product: {
       product_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
-        required: true
+        required: true,
       },
       color: { type: String, required: true },
       size: { type: String, required: true },
       order_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Order",
-        required: true
-      }
+        required: true,
+      },
     },
 
     condition: { type: String, required: true },
@@ -31,13 +31,17 @@ const warrantyTicketSchema = new mongoose.Schema(
     solution: { type: String, required: true },
     conclusion: { type: String },
 
-    staff: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    staff: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     manager: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
     status: {
       type: String,
-      enum: ["Pending", "Approved", "Rejected", "Done"],
-      default: "Pending",
+      enum: ["Chờ duyệt", "Đã duyệt", "Từ chối", "Hoàn tất"],
+      default: "Chờ duyệt",
     },
   },
   {
