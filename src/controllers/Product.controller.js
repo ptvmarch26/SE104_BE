@@ -161,13 +161,7 @@ const getInventoryReport = async (req, res) => {
     return res.status(200).json(result);
 
   } catch (error) {
-    console.error("Controller Error:", error);
-
-    return res.status(500).json({
-      EC: -1,
-      EM: "Lỗi hệ thống trong controller",
-      data: error.message,
-    });
+    return res.InternalError();
   }
 };
 
