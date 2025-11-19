@@ -144,11 +144,39 @@ const getAllProduct = async (req, res) => {
   }
 };
 
+const getInventoryReport = async (req, res) => {
+  try {
+    const { month, categoryId } = req.query;
+
+    if (!month) {
+      return res.status(400).json({
+        EC: 1,
+        EM: "Thiếu tham số month (YYYY-MM)",
+        data: null,
+      });
+    }
+
+    const result = await productService.getInventoryReport(month, categoryId);
+
+    return res.status(200).json(result);
+
+  } catch (error) {
+    console.error("Controller Error:", error);
+
+    return res.status(500).json({
+      EC: -1,
+      EM: "Lỗi hệ thống trong controller",
+      data: error.message,
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   uploadImgProduct,
   updateProduct,
   deleteProduct,
   getDetailsProduct,
-  getAllProduct,
+  getAllProduct,  
+  getInventoryReport,
 };

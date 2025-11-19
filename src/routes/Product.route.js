@@ -364,4 +364,5 @@ router.get("/get-details/:id", ProductController.getDetailsProduct);
  */
 router.get("/get-all", ProductController.getAllProduct);
 
+router.get("/inventory/report", ProductController.getInventoryReport);
 module.exports = router;

@@ -8,6 +8,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocs = require("./src/config/swagger");
 const responseHandler = require("./src/middlewares/ResponseHandler");
 require("./src/chronos/OrderChecker");
+require("./src/chronos/MonthlySnapshot");
 
 require("dotenv").config();
 
