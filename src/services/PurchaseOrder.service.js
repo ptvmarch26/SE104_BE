@@ -88,14 +88,22 @@ const createPurchaseOrder = async (purchaseOrderData) => {
     }
   }
 
-  // Tạo phiếu nhập
   const order = await PuchaseOrder.create({
     supplier,
     items,
     total_amount: totalAmount,
   });
 
-  return { EC: 0, EM: "Tạo phiếu nhập thành công", data: order };
+  const populatedOrder = await PuchaseOrder.findById(order._id).populate(
+    "supplier",
+    "name address phone"
+  );
+
+  return {
+    EC: 0,
+    EM: "Tạo phiếu nhập thành công",
+    data: populatedOrder,
+  };
 };
 
 const getPurchaseOrders = async (purchaseOrderId) => {
@@ -135,7 +143,12 @@ const updatePurchaseOrder = async (purchaseOrderId, updateData) => {
   else if (Array.isArray(updateData.items)) itemsToUpdate = updateData.items;
   else {
     await order.save();
-    return { EC: 0, EM: "Cập nhật thành công", data: order };
+    const populatedOrder = await PuchaseOrder.findById(order._id).populate(
+      "supplier",
+      "name address phone"
+    );
+
+    return { EC: 0, EM: "Cập nhật thành công", data: populatedOrder };
   }
 
   // Xử lý từng item
@@ -211,7 +224,12 @@ const updatePurchaseOrder = async (purchaseOrderId, updateData) => {
   order.total_amount = order.items.reduce((sum, i) => sum + i.total, 0);
 
   await order.save();
-  return { EC: 0, EM: "Cập nhật thành công", data: order };
+  const populatedOrder = await PuchaseOrder.findById(order._id).populate(
+    "supplier",
+    "name address phone"
+  );
+
+  return { EC: 0, EM: "Cập nhật thành công", data: populatedOrder };
 };
 
 module.exports = {
