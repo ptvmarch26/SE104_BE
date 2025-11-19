@@ -1,5 +1,9 @@
 const Product = require("../models/Product.model");
 const Category = require("../models/Category.model");
+const PurchaseOrder = require("../models/PurchaseOrder.model");
+const Order = require("../models/Order.model");
+const InventorySnapshot = require("../models/InventorySnapshot.model");
+const { getAllChildCategories } = require("../utils/getAllChildCategories");
 
 const createProduct = async (newProduct) => {
   const {
@@ -276,10 +280,138 @@ const getAllProduct = async (filters) => {
   };
 };
 
+
+const MIN_STOCK = 20;
+
+const getInventoryReport = async (month, categoryId) => {
+  try {
+    const regex = /^\d{4}[-/]\d{2}$/;
+    let cleanMonth = month.substring(0, 7);
+
+    if (!regex.test(cleanMonth)) {
+      return { EC: 1, EM: "Tham số month không hợp lệ. (YYYY-MM)", data: null };
+    }
+
+    const [year, mm] = cleanMonth.split(/[-/]/);
+    const start = new Date(Number(year), Number(mm) - 1, 1);
+    const end = new Date(Number(year), Number(mm), 1);
+
+    // Nếu có category → lấy cả con
+    let categoryFilterIds = null;
+
+    if (categoryId) {
+      categoryFilterIds = await getAllChildCategories(categoryId);
+    }
+
+    // Lấy sản phẩm theo category filter
+    const productQuery = categoryFilterIds
+      ? { product_category: { $in: categoryFilterIds } }
+      : {};
+
+    const products = await Product.find(productQuery).lean();
+
+    const snapshots = await InventorySnapshot.find({ month: cleanMonth }).lean();
+
+    const snapshotMap = new Map();
+    snapshots.forEach(s => {
+      const key = `${s.product_id}-${s.color}-${s.size}`;
+      snapshotMap.set(key, s.opening_stock);
+    });
+
+    const imports = await PurchaseOrder.aggregate([
+      { $match: { createdAt: { $gte: start, $lt: end } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: {
+            product: "$items.product",
+            color: "$items.color_name",
+            size: "$items.variant_size",
+          },
+          total_imported: { $sum: "$items.quantity" },
+          unit: { $first: "$items.unit" }
+        }
+      }
+    ]);
+
+    const importMap = new Map();
+    imports.forEach(i => {
+      const key = `${i._id.product}-${i._id.color}-${i._id.size}`;
+      importMap.set(key, { imported: i.total_imported, unit: i.unit });
+    });
+
+    const sales = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+          order_status: { $in: ["Đang giao", "Hoàn thành"] },
+        }
+      },
+      { $unwind: "$products" },
+      {
+        $group: {
+          _id: {
+            product: "$products.product_id",
+            color: "$products.color",
+            size: "$products.variant",
+          },
+          total_sold: { $sum: "$products.quantity" }
+        }
+      }
+    ]);
+
+    const saleMap = new Map();
+    sales.forEach(s => {
+      const key = `${s._id.product}-${s._id.color}-${s._id.size}`;
+      saleMap.set(key, s.total_sold);
+    });
+
+    const report = [];
+
+    for (const product of products) {
+      for (const color of product.colors) {
+        for (const variant of color.variants) {
+
+          const key = `${product._id}-${color.color_name}-${variant.variant_size}`;
+
+          const opening = snapshotMap.get(key) ?? variant.variant_countInStock;
+          const imported = importMap.get(key)?.imported || 0;
+          const unit = importMap.get(key)?.unit || "not specified";
+          const sold = saleMap.get(key) || 0;
+          const ending = opening + imported - sold;
+
+          report.push({
+            product_id: product._id,
+            product_title: product.product_title,
+            color: color.color_name,
+            size: variant.variant_size,
+            opening_stock: opening,
+            imported,
+            sold,
+            ending_stock: ending,
+            unit: unit,
+            note: ending < MIN_STOCK ? "Cần nhập thêm" : "",
+          });
+        }
+      }
+    }
+
+    return {
+      EC: 0,
+      EM: "Lấy báo cáo tồn kho thành công",
+      data: { month: cleanMonth, total_items: report.length, report }
+    };
+
+  } catch (err) {
+    return { EC: 1, EM: "Lỗi server", data: err.message };
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
   getDetailsProduct,
   deleteProduct,
   getAllProduct,
+  getInventoryReport,
 };
