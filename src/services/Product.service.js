@@ -307,7 +307,10 @@ const getInventoryReport = async (month, categoryId) => {
       ? { product_category: { $in: categoryFilterIds } }
       : {};
 
-    const products = await Product.find(productQuery).lean();
+    const products = await Product.find(productQuery)
+                  .populate("product_category", "category_unit")
+                  .lean();
+
 
     const snapshots = await InventorySnapshot.find({ month: cleanMonth }).lean();
 
@@ -375,7 +378,7 @@ const getInventoryReport = async (month, categoryId) => {
 
           const opening = snapshotMap.get(key) ?? variant.variant_countInStock;
           const imported = importMap.get(key)?.imported || 0;
-          const unit = importMap.get(key)?.unit || "Không có";
+          const productUnit = product.product_category?.category_unit || "cái";
           const sold = saleMap.get(key) || 0;
           const ending = opening + imported - sold;
 
@@ -388,7 +391,7 @@ const getInventoryReport = async (month, categoryId) => {
             imported,
             sold,
             ending_stock: ending,
-            unit: unit,
+            unit: productUnit,
             note: ending < MIN_STOCK ? "Cần nhập thêm" : "",
           });
         }
