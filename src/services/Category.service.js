@@ -1,12 +1,26 @@
 const Category = require("../models/Category.model");
 
 const createCategory = async (categoryData) => {
-  const { category_gender, category_type, category_parent_id, category_level } =
-    categoryData;
+  const {
+    category_gender = null,
+    category_type,
+    category_parent_id = null,
+    category_level = 1,
+    category_unit,
+  } = categoryData;
+
+  if (!category_type || category_type.trim() === "") {
+    return {
+      EC: 1,
+      EM: "Tên danh mục không được để trống",
+    };
+  }
+
   const existingCategory = await Category.findOne({
-    category_type: category_type,
+    category_type: category_type.trim(),
     category_gender: category_gender,
   });
+
   if (existingCategory) {
     return {
       EC: 1,
@@ -14,8 +28,26 @@ const createCategory = async (categoryData) => {
     };
   }
 
-  const newCategory = new Category(categoryData);
+  let finalUnit = category_unit || "cái";
+
+  if (category_parent_id) {
+    const parent = await Category.findById(category_parent_id);
+    if (!parent) {
+      return { EC: 1, EM: "Danh mục cha không tồn tại" };
+    }
+    finalUnit = parent.category_unit;
+  }
+
+  const newCategory = new Category({
+    category_gender,
+    category_type: category_type.trim(),
+    category_parent_id,
+    category_level,
+    category_unit: finalUnit,
+  });
+
   await newCategory.save();
+
   return {
     EC: 0,
     EM: "Tạo danh mục mới thành công",
@@ -67,22 +99,59 @@ const getSubCategory = async (categoryId) => {
 };
 
 const updateCategory = async (categoryId, updateData) => {
-  const existingCategory = await Category.findById(categoryId);
-  if (!existingCategory) {
-    return {
-      EC: 2,
-      EM: "Danh mục không tồn tại",
-    };
+  const existing = await Category.findById(categoryId);
+  if (!existing) {
+    return { EC: 2, EM: "Danh mục không tồn tại" };
   }
-  const updateCategory = await Category.findByIdAndUpdate(
+
+  const {
+    category_gender = existing.category_gender,
+    category_type = existing.category_type,
+    category_parent_id = existing.category_parent_id,
+    category_level = existing.category_level,
+    category_unit,
+  } = updateData;
+
+  if (!category_type || category_type.trim() === "") {
+    return { EC: 1, EM: "Tên danh mục không được để trống" };
+  }
+
+  const duplicate = await Category.findOne({
+    _id: { $ne: categoryId },
+    category_type: category_type.trim(),
+    category_gender,
+  });
+
+  if (duplicate) {
+    return { EC: 1, EM: "Danh mục đã tồn tại" };
+  }
+
+  let finalUnit = existing.category_unit;
+
+  if (category_parent_id) {
+    const parent = await Category.findById(category_parent_id);
+    if (!parent) return { EC: 1, EM: "Danh mục cha không tồn tại" };
+    finalUnit = parent.category_unit;
+  } else {
+    finalUnit = category_unit || existing.category_unit || "cái"; // danh mục cha
+  }
+
+  const updatedCategory = await Category.findByIdAndUpdate(
     categoryId,
-    updateData,
+    {
+      category_gender,
+      category_type: category_type.trim(),
+      category_parent_id,
+      category_level,
+      category_unit: finalUnit,
+    },
     { new: true, runValidators: true }
   );
+
   return {
     EC: 0,
     EM: "Cập nhật danh mục thành công",
-    data: updateCategory,
+    data: updatedCategory,
   };
 };
 
