@@ -21,7 +21,7 @@ const categorySchema = new mongoose.Schema(
       index: true 
     },
     category_level: { type: Number, required: true, default: 1,},
-    
+    category_unit: { type: String, required: true, default: "cái"  },
   },
   {
     timestamps: true,
