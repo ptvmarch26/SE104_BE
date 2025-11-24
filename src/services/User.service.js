@@ -1,6 +1,7 @@
 const Discount = require("../models/Discount.model");
 const User = require("../models/User.model");
 const bcrypt = require("bcrypt");
+const STAFF_ROLES = ["warehouse_staff", "sales_staff"];
 const getUserService = async (userId) => {
   const user = await User.findById(userId).select("-password");
   if (!user) {
@@ -19,6 +20,46 @@ const getAllUsersService = async () => {
     EC: 0,
     EM: "Lấy tất cả người dùng thành công",
     users,
+  };
+};
+
+const createStaffService = async ({ user_name, email, password, role }) => {
+  if (!user_name || !email || !password || !role) {
+    return { EC: 2, EM: "Thieu thong tin tao nhan vien" };
+  }
+
+  if (!STAFF_ROLES.includes(role)) {
+    return { EC: 3, EM: "Role nhan vien khong hop le" };
+  }
+
+  const existingUser = await User.findOne({
+    $or: [{ user_name }, { email }],
+  });
+
+  if (existingUser) {
+    return { EC: 1, EM: "Nguoi dung da ton tai" };
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newStaff = new User({
+    user_name,
+    email,
+    password: hashedPassword,
+    full_name: user_name,
+    role,
+  });
+
+  await newStaff.save();
+
+  return {
+    EC: 0,
+    EM: "Tao nhan vien thanh cong",
+    user: {
+      id: newStaff._id,
+      user_name: newStaff.user_name,
+      email: newStaff.email,
+      role: newStaff.role,
+    },
   };
 };
 
@@ -150,6 +191,7 @@ const deleteSearchHistoryService = async (userId, index) => {
 
 module.exports = {
   getAllUsersService,
+  createStaffService,
   changePasswordService,
   updateUserService,
   addAddressService,

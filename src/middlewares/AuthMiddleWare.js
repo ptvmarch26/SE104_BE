@@ -33,4 +33,26 @@ const optionalVerifyToken = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, identifyAdmin, optionalVerifyToken };
+const identifyAdminOrWarehouse = (req, res, next) => {
+  const role = req.user?.role;
+  if (role === "admin" || role === "warehouse_staff") {
+    return next();
+  }
+  return res.error(1, "Bạn không có quyền thực hiện hành động này", 403);
+};
+
+const identifyAdminOrSales = (req, res, next) => {
+  const role = req.user?.role;
+  if (role === "admin" || role === "sales_staff") {
+    return next();
+  }
+  return res.error(1, "Bạn không có quyền thực hiện hành động này", 403);
+};
+
+module.exports = {
+  verifyToken,
+  identifyAdmin,
+  identifyAdminOrWarehouse,
+  identifyAdminOrSales,
+  optionalVerifyToken,
+};

@@ -24,3 +24,31 @@ exports.exportInventoryExcel = async (req, res) => {
     res.status(500).json({ EC: 1, EM: "Lỗi export", data: err.message });
   }
 };
+
+exports.exportMonthlyRevenue = async (req, res) => {
+  try {
+    const { month, categoryId } = req.query;
+    const result = await exportService.exportMonthlyRevenueExcel(
+      month,
+      categoryId
+    );
+
+    if (result.EC !== 0) {
+      return res.status(400).json(result);
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=BaoCaoDoanhThu_${result.data?.month || month}.xlsx`
+    );
+
+    await result.workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    res.status(500).json({ EC: 1, EM: "Loi export", data: err.message });
+  }
+};

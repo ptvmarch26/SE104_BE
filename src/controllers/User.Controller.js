@@ -9,6 +9,7 @@ const {
   getDiscountUser,
   deleteAddressService,
   deleteSearchHistoryService,
+  createStaffService,
 } = require("../services/User.service");
 const { uploadAvtUser } = require("../utils/UploadUtil");
 
@@ -31,6 +32,23 @@ const userController = {
       const result = await getAllUsersService();
       return result.EC === 0
         ? res.success(result.users, result.EM)
+        : res.error(result.EC, result.EM);
+    } catch (error) {
+      return res.InternalError();
+    }
+  },
+
+  async createStaff(req, res) {
+    try {
+      const { user_name, email, password, role } = req.body;
+      const result = await createStaffService({
+        user_name,
+        email,
+        password,
+        role,
+      });
+      return result.EC === 0
+        ? res.success(result.user, result.EM)
         : res.error(result.EC, result.EM);
     } catch (error) {
       return res.InternalError();

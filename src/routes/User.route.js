@@ -110,6 +110,52 @@ router.get(
 );
 /**
  * @swagger
+ * /user/staff:
+ *   post:
+ *     summary: Tao tai khoan nhan vien
+ *     description: Admin tao nhan vien kho hoac nhan vien ban hang.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_name
+ *               - email
+ *               - password
+ *               - role
+ *             properties:
+ *               user_name:
+ *                 type: string
+ *                 example: "staff001"
+ *               email:
+ *                 type: string
+ *                 example: "staff001@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "secret123"
+ *               role:
+ *                 type: string
+ *                 enum: [warehouse_staff, sales_staff]
+ *                 example: "warehouse_staff"
+ *     responses:
+ *       200:
+ *         description: Tao nhan vien thanh cong
+  *       400:
+ *         description: Du lieu khong hop le hoac tai khoan da ton tai
+  *       403:
+ *         description: Token admin khong hop le
+  *       500:
+ *         description: Loi may chu
+ */
+router.post("/staff", verifyToken, identifyAdmin, UserController.createStaff);
+/**
+ * @swagger
  * /user/change_password:
  *   patch:
  *     summary: Đổi mật khẩu
