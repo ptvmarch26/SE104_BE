@@ -1,5 +1,5 @@
 const ExcelJS = require("exceljs");
-const PurchaseOrder = require("../models/PurchaseOrder.model");
+const SaleInvoice = require("../models/SaleInvoice.model");
 const Product = require("../models/Product.model");
 const productService = require("./Product.service");
 const categoryService = require("./Category.service");
@@ -68,7 +68,7 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
   const { start, end, label } = parsedMonth;
   const match = { createdAt: { $gte: start, $lt: end } };
 
-  let orders = await PurchaseOrder.find(match)
+  let orders = await SaleInvoice.find(match)
     .select("total_amount items createdAt")
     .lean();
 
@@ -96,7 +96,7 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
         }
         const itemTotal =
           item.total ??
-          (Number(item.quantity) || 0) * (Number(item.import_price) || 0);
+          (Number(item.quantity) || 0) * (Number(item.sale_price) || 0);
         return sum + (Number(itemTotal) || 0);
       }, 0);
     } else {
