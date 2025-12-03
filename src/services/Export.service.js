@@ -1,5 +1,5 @@
 const ExcelJS = require("exceljs");
-const Order = require("../models/Order.model");
+const PurchaseOrder = require("../models/PurchaseOrder.model");
 const Product = require("../models/Product.model");
 const productService = require("./Product.service");
 const categoryService = require("./Category.service");
@@ -66,25 +66,18 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
   }
 
   const { start, end, label } = parsedMonth;
-  const completedStatuses = ["Hoàn thành"];
+  const match = { createdAt: { $gte: start, $lt: end } };
 
-  const match = {
-    createdAt: { $gte: start, $lt: end },
-    order_status: { $in: completedStatuses },
-  };
-
-  let orders = await Order.find(match)
-    .select("order_total_final createdAt products")
+  let orders = await PurchaseOrder.find(match)
+    .select("total_amount items createdAt")
     .lean();
 
+  let productSet = null;
   if (categoryId) {
     const productIds = await Product.find({
       product_category: categoryId,
     }).distinct("_id");
-    const productSet = new Set(productIds.map((id) => id.toString()));
-    orders = orders.filter((order) =>
-      order.products?.some((p) => productSet.has(String(p.product_id)))
-    );
+    productSet = new Set(productIds.map((id) => id.toString()));
   }
 
   let totalRevenue = 0;
@@ -94,15 +87,36 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
     const dayKey = order.createdAt
       ? order.createdAt.toISOString().slice(0, 10)
       : label;
-    const revenue = Number(order.order_total_final) || 0;
 
-    totalRevenue += revenue;
+    let revenue = 0;
+    if (order?.items?.length) {
+      revenue = order.items.reduce((sum, item) => {
+        if (productSet && !productSet.has(String(item.product))) {
+          return sum;
+        }
+        const itemTotal =
+          item.total ??
+          (Number(item.quantity) || 0) * (Number(item.import_price) || 0);
+        return sum + (Number(itemTotal) || 0);
+      }, 0);
+    } else {
+      revenue = Number(order.total_amount) || 0;
+    }
+
+    if (productSet && revenue === 0) {
+      return;
+    }
 
     const agg = dailyMap.get(dayKey) || { revenue: 0, count: 0 };
     agg.revenue += revenue;
     agg.count += 1;
     dailyMap.set(dayKey, agg);
   });
+
+  totalRevenue = Array.from(dailyMap.values()).reduce(
+    (sum, item) => sum + (Number(item.revenue) || 0),
+    0
+  );
 
   const details = Array.from(dailyMap.entries())
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -114,7 +128,7 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
       rate:
         totalRevenue === 0
           ? 0
-          : Number(((data.revenue * 100) / totalRevenue).toFixed(2)),
+          : Number(((data.revenue * 100) / totalRevenue).toFixed(4)),
     }));
 
   const workbook = new ExcelJS.Workbook();
@@ -135,6 +149,8 @@ exports.exportMonthlyRevenueExcel = async (month, categoryId) => {
 
   sheet.addRow([]);
   sheet.addRow(["STT", "Ngày", "Số đơn hàng", "Doanh thu", "Tỉ lệ (%)"]);
+  sheet.getColumn(4).numFmt = "#,##0"; // number with thousand separators
+  sheet.getColumn(5).numFmt = "0.0000"; // 4 decimal places
 
   details.forEach((row) => {
     sheet.addRow([row.stt, row.day, row.orders, row.revenue, row.rate]);
