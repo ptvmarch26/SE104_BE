@@ -1,5 +1,5 @@
 const WarrantyTicket = require("../models/WarrantyTicket.model");
-const Order = require("../models/Order.model");
+const SaleInvoice = require("../models/SaleInvoice.model");
 
 const createTicket = async (body) => {
   const {
@@ -13,61 +13,50 @@ const createTicket = async (body) => {
     staff,
   } = body;
 
-  // 1. Validate đơn hàng
-  const order = await Order.findById(product.order_id);
+  // 1️⃣ Kiểm tra hóa đơn
+  const invoice = await SaleInvoice.findById({
+    _id: product.invoice_id
+  });
 
-  if (order.order_status !== "Hoàn thành") {
-    return {
-      EC: 1,
-      EM: "Chỉ có thể tạo phiếu cho đơn đã hoàn thành",
-    };
-  }
-  if (!order) {
-    return {
-      EC: 1,
-      EM: "Không tìm thấy đơn hàng",
-      data: null,
-    };
+  if (!invoice) {
+    return { EC: 1, EM: "Không tìm thấy hóa đơn phù hợp", data: null };
   }
 
-  // 2. Validate sản phẩm nằm trong đơn hàng
-  const matched = order.products.find(
-    (p) =>
-      p.product_id.toString() === product.product_id &&
-      p.color === product.color &&
-      p.variant === product.size
+  // 2️⃣ Kiểm tra sản phẩm có nằm trong hóa đơn không?
+  const matched = invoice.items.find(
+    (i) =>
+      i.product.toString() === product.product_id &&
+      i.color_name === product.color &&
+      i.variant_size === product.size
   );
 
   if (!matched) {
-    return {
-      EC: 1,
-      EM: "Sản phẩm không thuộc đơn hàng này",
-      data: null,
-    };
+    return { EC: 1, EM: "Sản phẩm không thuộc hóa đơn này", data: null };
   }
 
-  // 3. Quy định QĐ 3.2 – Đổi trả trong 7 ngày
+  // 3️⃣ Đổi trả chỉ áp dụng trong 7 ngày từ ngày mua
   if (ticket_type === "Đổi trả") {
     const diffDays =
-      (new Date() - new Date(order.createdAt)) / (1000 * 60 * 60 * 24);
+      (new Date() - new Date(invoice.createdAt)) / (1000 * 60 * 60 * 24);
 
     if (diffDays > 7) {
       return {
         EC: 1,
-        EM: "Đơn hàng đã quá 7 ngày – không thể đổi/trả",
+        EM: "Quá hạn 7 ngày kể từ ngày mua – không thể đổi/trả",
         data: null,
       };
     }
   }
 
-  const existedTicket = await WarrantyTicket.findOne({
-    "product.order_id": product.order_id,
+  // 4️⃣ Kiểm tra đã tồn tại phiếu cho sản phẩm này chưa
+  const existed = await WarrantyTicket.findOne({
+    "product.invoice_id": product.invoice_id,
     "product.product_id": product.product_id,
     "product.color": product.color,
     "product.size": product.size,
   });
 
-  if (existedTicket) {
+  if (existed) {
     return {
       EC: 1,
       EM: "Sản phẩm này đã có phiếu bảo hành/đổi trả",
@@ -75,8 +64,17 @@ const createTicket = async (body) => {
     };
   }
 
-  // 4. Tạo phiếu
-  const ticket = await WarrantyTicket.create(body);
+  // 5️⃣ Tạo phiếu bảo hành
+  const ticket = await WarrantyTicket.create({
+    customer_name,
+    customer_phone,
+    ticket_type,
+    product,
+    condition,
+    reason,
+    solution,
+    staff,
+  });
 
   return {
     EC: 0,

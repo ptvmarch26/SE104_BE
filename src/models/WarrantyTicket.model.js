@@ -19,9 +19,9 @@ const warrantyTicketSchema = new mongoose.Schema(
       },
       color: { type: String, required: true },
       size: { type: String, required: true },
-      order_id: {
+      invoice_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Order",
+        ref: "SaleInvoice",
         required: true,
       },
     },
