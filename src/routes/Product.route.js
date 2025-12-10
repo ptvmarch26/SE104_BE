@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const ProductController = require("../controllers/Product.controller");
-const { verifyToken, identifyAdmin } = require("../middlewares/AuthMiddleWare");
+const {
+  verifyToken,
+  identifyAdmin,
+  identifyAdminOrWarehouse,
+} = require("../middlewares/AuthMiddleWare");
 
 /**
  * @swagger
@@ -358,11 +362,16 @@ router.get("/get-details/:id", ProductController.getDetailsProduct);
  *                   example: Lấy danh sách sản phẩm thành công
  *                 result:
  *                   type: array
- *                   example: []            
+ *                   example: []
  *       500:
  *         description: Lỗi máy chủ
  */
 router.get("/get-all", ProductController.getAllProduct);
 
-router.get("/inventory/report", ProductController.getInventoryReport);
+router.get(
+  "/inventory/report",
+  verifyToken,
+  identifyAdminOrWarehouse,
+  ProductController.getInventoryReport
+);
 module.exports = router;

@@ -15,7 +15,7 @@ const createTicket = async (body) => {
 
   // 1️⃣ Kiểm tra hóa đơn
   const invoice = await SaleInvoice.findById({
-    _id: product.invoice_id
+    _id: product.invoice_id,
   });
 
   if (!invoice) {
