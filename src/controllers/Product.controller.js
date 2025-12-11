@@ -41,45 +41,85 @@ const createProduct = async (req, res) => {
     return res.InternalError();
   }
 };
+//   try {
+//     const productId = req.params.id;
+//     const uploadResult = await uploadImgProduct(req, res); // Gọi hàm upload
+//     if (!uploadResult.success) {
+//       return res.error(1, uploadResult.error);
+//     }
+
+//     let productData = { ...req.body };
+
+//     if (req.body.colors) {
+//       try {
+//         productData.colors = JSON.parse(req.body.colors);
+//         if (!Array.isArray(productData.colors)) {
+//           return res.error(1, "Định dạng màu không hợp lệ");
+//         }
+//       } catch (error) {
+//         return res.error(1, "Định dạng JSON không hợp lệ cho các biến thể");
+//       }
+//     } else {
+//       productData.colors = existingProduct.colors || [];
+//     }
+
+//     const filesMap = processUploadedFiles(req);
+
+//     try {
+//       productData = updateProductImages(filesMap, productData, existingProduct);
+//     } catch (error) {
+//       return res.error(1, error.message);
+//     }
+
+//     const result = await productService.updateProduct(productId, productData);
+//     result.EC === 0
+//       ? res.success(result.data, result.EM)
+//       : res.error(result.EC, result.EM);
+//   } catch (error) {
+//     console.log("err", error);
+//     return res.InternalError();
+//   }
+// };
 
 const updateProduct = async (req, res) => {
   try {
     const productId = req.params.id;
-    const uploadResult = await uploadImgProduct(req, res); // Gọi hàm upload
+
+    const uploadResult = await uploadImgProduct(req, res);
     if (!uploadResult.success) {
       return res.error(1, uploadResult.error);
     }
 
     let productData = { ...req.body };
 
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) return res.error(1, "Không tìm thấy sản phẩm");
+
     if (req.body.colors) {
       try {
         productData.colors = JSON.parse(req.body.colors);
         if (!Array.isArray(productData.colors)) {
-          return res.error(1, "Định dạng màu không hợp lệ");
+          return res.error(1, "Định dạng colors không hợp lệ");
         }
-      } catch (error) {
-        return res.error(1, "Định dạng JSON không hợp lệ cho các biến thể");
+      } catch {
+        return res.error(1, "Sai định dạng JSON cho colors");
       }
     } else {
-      productData.colors = existingProduct.colors || [];
+      productData.colors = existingProduct.colors;
     }
 
     const filesMap = processUploadedFiles(req);
 
-    try {
-      productData = updateProductImages(filesMap, productData, existingProduct);
-    } catch (error) {
-      return res.error(1, error.message);
-    }
+    productData = updateProductImages(filesMap, productData, existingProduct);
 
     const result = await productService.updateProduct(productId, productData);
+
     result.EC === 0
       ? res.success(result.data, result.EM)
       : res.error(result.EC, result.EM);
   } catch (error) {
+    console.error("Update product error:", error);
     return res.InternalError();
-    z;
   }
 };
 
