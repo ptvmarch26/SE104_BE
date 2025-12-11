@@ -63,7 +63,11 @@ const createPurchaseOrder = async (purchaseOrderData) => {
     // 4. Tăng tồn kho
     variant.variant_countInStock += item.quantity;
 
-    // variant.variant_price = item.importPrice * 1.05; // Cập nhật giá nhập mới
+    product.product_countInStock = product.colors.reduce((sum, c) => {
+      return (
+        sum + c.variants.reduce((vSum, v) => vSum + v.variant_countInStock, 0)
+      );
+    }, 0);
 
     // 5. Tính thành tiền
     item.total = item.quantity * item.import_price;
