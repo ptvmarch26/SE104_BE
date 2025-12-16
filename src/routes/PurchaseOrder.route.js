@@ -3,27 +3,28 @@ const express = require("express");
 const {
   verifyToken,
   identifyAdminOrSales,
+  identifyAdminOrWarehouse,
 } = require("../middlewares/AuthMiddleWare");
 const router = express.Router();
 
 router.post(
   "/create",
   verifyToken,
-  identifyAdminOrSales,
+  identifyAdminOrWarehouse,
   PuchaseOrderController.createPurchaseOrder
 );
 
 router.get(
   "/:id?",
   verifyToken,
-  identifyAdminOrSales,
+  identifyAdminOrWarehouse,
   PuchaseOrderController.getPurchaseOrders
 );
 
 router.patch(
   "/update/:id",
   verifyToken,
-  identifyAdminOrSales,
+  identifyAdminOrWarehouse,
   PuchaseOrderController.updatePurchaseOrder
 );
 
